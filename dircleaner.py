@@ -27,7 +27,7 @@ def compress(x):
     delete(x)
 
 def main():
-    parser = optparse.OptionParser('[-] Usage: dircleaner.py '+ '-p <PATH> -s <SECONDS> -a <ACTION>')
+    parser = optparse.OptionParser('[-] Usage: dircleaner.py '+ '-p <PATH> -s <SECONDS> -a <ACTION> -h for help')
     parser.add_option('-p', dest='path', type='string', help='work path')
     parser.add_option('-s', dest='seconds', type='int', help='number of seconds in the past since now')
     parser.add_option('-a', dest='action', type='string', help='a = archive, ca = compress and archive, d = delete files')
