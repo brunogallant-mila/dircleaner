@@ -6,14 +6,20 @@
 
 import os,sys,optparse,time,shutil,gzip
 
+global NOW 
+NOW = int(time.time())
+
 def delete(x):
+    print("Deleting: " + x)
     os.unlink(x)
 
-def log(x):
+def log(x, stat):
+    print("Logging: " + x)
     logpath = path + "deleted.log"
     with open(logpath, "a") as log_file:
-        log_file.write(x + ": " + str(stat) + "\n")
-    
+        log_file.write(path + x + ": " + stat + "\n")
+
+
 def main():
     parser = optparse.OptionParser('[-] Usage: dircleaner.py '+ '-p <PATH> -s <SECONDS> -a <ACTION> -h for help')
     parser.add_option('-p', dest='path', type='string', help='work path')
@@ -33,27 +39,33 @@ def main():
     seconds = options.seconds
     action = options.action
 
-
     if (action != "d") & (action != "dl"):
         sys.exit("Valid actions are:\n\nd = delete files, dl = delete files and log\n\nInsert coin and try again! ")
 
-    now = int(time.time())
+
+
     files = os.listdir(path)
     os.chdir(path)
 
-    global stat
-
     for a in files:
         if os.path.isfile(a):
+            print("file: " + a)
             stat = os.stat(a)
             ctime = int(stat.st_ctime)
-            diff = now - ctime
-            if diff > seconds:
+            mtime = int(stat.st_mtime)
+            atime = int(stat.st_atime)
+            cdiff = NOW - ctime
+            mdiff = NOW - mtime
+            adiff = NOW - atime
+
+            if cdiff > seconds and mdiff > seconds and adiff > seconds:
                 if action == "dl":
                     delete(a)
-                    log(a)
+                    log(a, str(stat))
                 elif action == "d":
                     delete(a)
+
+
 
 ####################################################################
 
