@@ -1,70 +1,46 @@
 #!/usr/bin/env python3
 #
-# Remove files and directories quickly from a path, and optionally log the deleted files.
-#
+# Remove files and directories quickly from a path, and log the deleted files.
+# TODO: catch exception for directories that are not empty, and ignore them.
 #
 
-import os,sys,optparse,time,shutil,gzip
+import os,time
 
-global NOW 
 NOW = int(time.time())
+seconds = 5
+logpath = "/home/brunog-local/stash_cleanup.log"
+path = "/home/brunog-local/tmp1/"
 
 def delete(x):
-    print("Deleting: " + x)
-    os.unlink(x)
+    stat = os.stat(x)
+    mtime = int(stat.st_mtime)
+    atime = int(stat.st_atime)
+    mdiff = NOW - mtime
+    adiff = NOW - atime
+    
+    if os.path.isfile(x):
+        if mdiff > seconds and adiff > seconds:
+            os.unlink(x)
+            # print("Dead file: " + x)
 
-def log(x, stat):
-    print("Logging: " + x)
-    logpath = path + "deleted.log"
+    elif os.path.isdir(x):
+        if mdiff > seconds:
+            os.rmdir(x)
+            # print("Dead dir: " + x)
+
     with open(logpath, "a") as log_file:
-        log_file.write(path + x + ": " + stat + "\n")
+        log_file.write(x + ": " + str(stat) + "\n")
 
 
 def main():
-    parser = optparse.OptionParser('[-] Usage: dircleaner.py '+ '-p <PATH> -s <SECONDS> -a <ACTION> -h for help')
-    parser.add_option('-p', dest='path', type='string', help='work path')
-    parser.add_option('-s', dest='seconds', type='int', help='number of seconds in the past since now')
-    parser.add_option('-a', dest='action', type='string', help='d = delete files, dl = delete files and log')
-    (options, args) = parser.parse_args()
 
-    if (options.path == None) | (options.seconds == None) | (options.action == None):
-        sys.exit(parser.usage)
-
-    global path
-    if (options.path == "."):
-        path = "./"
-    else:
-        path = options.path
-    
-    seconds = options.seconds
-    action = options.action
-
-    if (action != "d") & (action != "dl"):
-        sys.exit("Valid actions are:\n\nd = delete files, dl = delete files and log\n\nInsert coin and try again! ")
-
-
-
-    files = os.listdir(path)
-    os.chdir(path)
-
-    for a in files:
-        if os.path.isfile(a):
-            print("file: " + a)
-            stat = os.stat(a)
-            ctime = int(stat.st_ctime)
-            mtime = int(stat.st_mtime)
-            atime = int(stat.st_atime)
-            cdiff = NOW - ctime
-            mdiff = NOW - mtime
-            adiff = NOW - atime
-
-            if cdiff > seconds and mdiff > seconds and adiff > seconds:
-                if action == "dl":
-                    delete(a)
-                    log(a, str(stat))
-                elif action == "d":
-                    delete(a)
-
+    for root, dirs, files in os.walk(path, topdown=False):
+        for name in files:
+            # print("file: " + os.path.join(root, name))
+            delete(os.path.join(root, name))
+        for name in dirs:
+            # print("dir: " + os.path.join(root, name))
+            delete(os.path.join(root, name))
 
 
 ####################################################################
