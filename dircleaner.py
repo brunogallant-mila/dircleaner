@@ -36,7 +36,11 @@ def main():
     if (options.path == None) | (options.seconds == None) | (options.action == None):
         sys.exit(parser.usage)
 
-    path = options.path
+    if (options.path == "."):
+        path = "./"
+    else:
+        path = options.path
+    
     seconds = options.seconds
     action = options.action
 
