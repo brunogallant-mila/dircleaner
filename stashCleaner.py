@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 #
 # Remove files and directories quickly from a path, and log the deleted files.
-# TODO: catch exception for directories that are not empty, and ignore them.
+# TODO: 
+# - catch exception for directories that are not empty, and ignore them.
+# - Add end report, with number of files and directories deleted
+# - have this report be gzipped automatically
+# - In the log report, /network/scratch should not appear, to save 
 #
 
 import os,time
