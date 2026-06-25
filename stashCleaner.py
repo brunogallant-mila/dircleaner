@@ -17,7 +17,7 @@ from os.path import exists
 
 
 now = int(time.time())
-seconds = 6
+seconds = 60 * 60 * 24 * 90
 # seconds = 5
 basedir = "/home/brunog-local/stashCleaner/"
 deletelog = basedir + "stashCleaner_delete_" + str(now) + ".log"
@@ -41,7 +41,7 @@ def already_running():
     return False
 
 def delete(x):
-    global delFiles, delDirs, totFiles, totDirs
+    global delFiles, delDirs
     stat = os.stat(x)
     mtime = int(stat.st_mtime)
     atime = int(stat.st_atime)
@@ -49,15 +49,16 @@ def delete(x):
     adiff = now - atime
     
     if os.path.isfile(x):
-        totFiles += 1
-        if mdiff > seconds and adiff > seconds:
+        print("File: " + x + " | mtime: " + str(mdiff) + " | atime: " + str(adiff))
+        # if mdiff > seconds and adiff > seconds:
+        if mdiff > seconds:
             os.unlink(x)
             delFiles += 1
             with open(deletelog, "a") as log_file:
                 log_file.write("File: " + x + ": " + str(stat) + "\n")
 
-    elif os.path.isdir(x):
-        totDirs += 1
+    if os.path.isdir(x):
+        print("Dir: " + x + " | mtime: " + str(mdiff) + " | atime: " + str(adiff))
         if mdiff > seconds:
             os.rmdir(x)
             delDirs += 1
@@ -75,6 +76,7 @@ def report():
         log_file.write("Total dirs: " + str(totDirs) + "\n")
 
 def main():
+    global totFiles, totDirs
     with open(reportlog, "a") as log_file:
         log_file.write(time.ctime() + " | ")
 
@@ -85,9 +87,13 @@ def main():
     try:
         for root, dirs, files in os.walk(path, topdown=False):
             for name in files:
+                # print(path, name)
+                totFiles += 1
                 # print("file: " + os.path.join(root, name))
                 delete(os.path.join(root, name))
             for name in dirs:
+                # print(path, name)
+                totDirs += 1
                 # print("dir: " + os.path.join(root, name))
                 delete(os.path.join(root, name))
     except OSError as e:
