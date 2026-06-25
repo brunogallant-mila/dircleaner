@@ -2,49 +2,108 @@
 #
 # Remove files and directories quickly from a path, and log the deleted files.
 # TODO: 
-# - catch exception for directories that are not empty, and ignore them.
-# - Add end report, with number of files and directories deleted
-# - have this report be gzipped automatically
-# - In the log report, /network/scratch should not appear, to save 
+# - DONE - catch exception for directories that are not empty, and ignore them.
+# - DONE - Add end report, with number of files and directories deleted
+# - DONE - have this report be gzipped automatically
+# - DONE - Catch Control-C and exit gracefully, with a report of what was deleted so far
+# - DONE - check if it is already running.
+# - VERSION 2 - send report to slack
 #
 
-import os,time
+from subprocess import check_call
+import os,time,signal
+from os import getpid
+from os.path import exists
 
-NOW = int(time.time())
-seconds = 5
-logpath = "/home/brunog-local/stash_cleanup.log"
-path = "/home/brunog-local/tmp1/"
+
+now = int(time.time())
+seconds = 6
+# seconds = 5
+basedir = "/home/brunog-local/stashCleaner/"
+deletelog = basedir + "stashCleaner_delete_" + str(now) + ".log"
+reportlog = basedir + "stashCleaner_report.log"
+path = "/home/brunog-local/tmp/"
+delFiles = 0
+delDirs = 0
+totFiles = 0
+totDirs = 0
+
+LOCKFILE = basedir + "stashCleaner.lock"
+
+def already_running():
+    my_pid = getpid()
+    if exists(LOCKFILE):
+        print("Another instance of this script is already running. Exiting.")
+        exit(1)
+
+    with open(LOCKFILE, 'w') as f:
+        f.write(str(my_pid))
+    return False
 
 def delete(x):
+    global delFiles, delDirs, totFiles, totDirs
     stat = os.stat(x)
     mtime = int(stat.st_mtime)
     atime = int(stat.st_atime)
-    mdiff = NOW - mtime
-    adiff = NOW - atime
+    mdiff = now - mtime
+    adiff = now - atime
     
     if os.path.isfile(x):
+        totFiles += 1
         if mdiff > seconds and adiff > seconds:
             os.unlink(x)
-            # print("Dead file: " + x)
+            delFiles += 1
+            with open(deletelog, "a") as log_file:
+                log_file.write("File: " + x + ": " + str(stat) + "\n")
 
     elif os.path.isdir(x):
+        totDirs += 1
         if mdiff > seconds:
             os.rmdir(x)
-            # print("Dead dir: " + x)
+            delDirs += 1
+            with open(deletelog, "a") as log_file:
+                log_file.write("Dir: " + x + ": " + str(stat) + "\n")
 
-    with open(logpath, "a") as log_file:
-        log_file.write(x + ": " + str(stat) + "\n")
-
+def report():
+    end = int(time.time())
+    runtime = end - now
+    with open(reportlog, "a") as log_file:
+        log_file.write("Runtime: " + str(runtime) + " seconds | ")
+        log_file.write("Files deleted: " + str(delFiles) + " | ")
+        log_file.write("Dirs deleted: " + str(delDirs) + " | ")
+        log_file.write("Total files: " + str(totFiles) + " | ")
+        log_file.write("Total dirs: " + str(totDirs) + "\n")
 
 def main():
+    with open(reportlog, "a") as log_file:
+        log_file.write(time.ctime() + " | ")
 
-    for root, dirs, files in os.walk(path, topdown=False):
-        for name in files:
-            # print("file: " + os.path.join(root, name))
-            delete(os.path.join(root, name))
-        for name in dirs:
-            # print("dir: " + os.path.join(root, name))
-            delete(os.path.join(root, name))
+    already_running() # Check if another instance is running, and exit if so.
+    
+    signal.signal(signal.SIGTERM, report) # Trap SIGTERM and call report() before exiting
+
+    try:
+        for root, dirs, files in os.walk(path, topdown=False):
+            for name in files:
+                # print("file: " + os.path.join(root, name))
+                delete(os.path.join(root, name))
+            for name in dirs:
+                # print("dir: " + os.path.join(root, name))
+                delete(os.path.join(root, name))
+    except OSError as e:
+        # print("Dir Error: " + str(e))
+        pass
+    
+    except Exception as e:
+        print("Error: " + str(e))
+    
+    finally:
+        report()
+        if exists(deletelog):
+            check_call(['gzip', deletelog])
+        os.remove(LOCKFILE)
+        exit(0)
+
 
 
 ####################################################################
@@ -53,3 +112,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
