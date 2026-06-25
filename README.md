@@ -41,7 +41,7 @@ will not be deleted elsewhere.
 
 AUTHOR
 
- Bruno Gallant -- bgallant@bsdnode.net
+Bruno Gallant -- bgallant@bsdnode.net
  
 ORIGINAL RCS VERSION CONTROL
  
