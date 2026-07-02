@@ -2,6 +2,8 @@
 #
 # Remove files and directories quickly from a path, and log the deleted files.
 # TODO: 
+# - make it work in parallel
+# - make it tar/gz a tree of directories without any files in it.
 # - VERSION 2 - send report to slack
 #
 
@@ -75,6 +77,7 @@ def main():
     path = options.path
     global totFiles, totDirs
     with open(reportlog, "a") as log_file:
+        log_file.write(str(now) + " | ")
         log_file.write("Start: " + time.ctime() + " | ")
 
     already_running() # Check if another instance is running, and exit if so.
