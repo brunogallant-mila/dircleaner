@@ -86,6 +86,7 @@ def report():
         log_file.write("Total files: " + str(totFiles) + " | ")
         log_file.write("Files deleted: " + str(delFiles) + " | ")
         log_file.write("Total dirs: " + str(totDirs) + " | ")
+        log_file.write("Inodes: " + str(totDirs+totFiles) + " | ")
         log_file.write("Working dir: " + path + " | ")
         log_file.write("Run number: " + str(now) + "\n")
 
